@@ -1,15 +1,24 @@
 NAME = minirt
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall -Wextra -Werror -g
 
 INCLUDE = -I./includes -I./get_next_line -I./mlx -I./libft
 LIBS = -L./mlx -lmlx -L./libft -lft
 
 SRC_DIR = ./srcs/
 GNL_DIR = ./get_next_line/
+OBJ_DIR = ./objs/
 
 SRC_LIST = main.c \
+		   utils.c \
+		   ray.c \
+		   canvas.c \
+		   scene.c \
+		   print.c \
+		   object_create.c \
+		   hit_sphere.c \
+		   normal.c \
 
 GNL_LIST = get_next_line.c \
 		   get_next_line_utils.c \

@@ -6,6 +6,6 @@ t_sphere	sphere(t_point3 center, double radius)
 
 	sp.center = center;
 	sp.radius = radius;
-	sp.radius = radius * radius;
+	sp.radius2 = radius * radius;
 	return (sp);
 }
