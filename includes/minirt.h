@@ -27,10 +27,17 @@ typedef struct s_sphere t_sphere;
 
 typedef struct s_hit_record t_hit_record;
 
+// 여러가지의 object를 저장할 수 있어야하고 그 object들을 한번에 가지고 다닐 수 있어야한다.
+// ray는 여러개의 object 중 가장 가까이 있는 object에ㅔ 히트를 해야한다. 
+// 우선 object라는 리스트를 만들어 각 도형의 정보를 저장할 것이다.
+// 그리고 기존에 sphere에만 적용 가능했던 함수들을 조금씩 수정할 예정이다.
+typedef struct s_object t_object;
+
 typedef int				t_bool;
 # define FALSE	0
 # define TRUE	1
-
+typedef int				t_object_type;
+# define SP		0
 
 struct	s_vec3
 {
@@ -52,6 +59,14 @@ struct	s_sphere
 	t_point3	center;
 	double		radius;
 	double		radius2;
+};
+
+// 오브젝트 구조체
+struct	s_object
+{
+	t_object_type	type;
+	void			*element;
+	void			*next;
 };
 
 struct	s_camera
@@ -145,20 +160,31 @@ t_vec3      vmin(t_vec3 vec1, t_vec3 vec2);
 t_ray		ray(t_point3 orig, t_vec3 dir);
 t_ray		ray_primary(t_camera *cam, double u, double v); // 가장 처음 카메라에서 출발한 광선
 t_point3	ray_at(t_ray *ray, double t);
-t_color3	ray_color(t_ray *ray, t_sphere *sphere); // 광선이 최정적으로 얻게된 픽셀의 색상 값을 리턴
+//t_color3	ray_color(t_ray *ray, t_sphere *sphere); // 광선이 최정적으로 얻게된 픽셀의 색상 값을 리턴
+t_color3	ray_color(t_ray *ray, t_object *world);
+
+// srcs/hit.c	(src/trace/hit/hit.c)
+t_bool		hit(t_object *obj, t_ray *ray, t_hit_record *rec);
+t_bool		hit_obj(t_object *obj, t_ray *ray, t_hit_record *rec);
 // srcs/hit_sphere.c	(src/trace/hit/hit_sphere.c)
-t_bool		hit_sphere(t_sphere *sp, t_ray *ray, t_hit_record *rec);
+//t_bool		hit_sphere(t_sphere *sp, t_ray *ray, t_hit_record *rec);
+t_bool			hit_sphere(t_object *world, t_ray *ray, t_hit_record *rec);
+
 // srcs/normal.c	(src/trace/hit/normal.c)
 void		set_face_normal(t_ray *r, t_hit_record *rec);
 
 // 오브젝트를 만드는 함수는 장면을 구성할 함수이므로 scene.h에 
 // srcs/object_create.c	(srcs/scene/object_create.c)
-t_sphere	sphere(t_point3 center, double radius);
+//t_sphere	sphere(t_point3 center, double radius);
+t_sphere	*sphere(t_point3 center, double radius);
+t_object	*object(t_object_type type, void *element);
 // srcs/canvas.c	(srcs/scene/canvas.c) (scene.h)
 t_canvas	canvas(int width, int height);
 // sccs/scene.c		(srcs/scene/scene.c) (scene.h)
 t_camera	camera(t_canvas *canvas, t_point3 origin);
 
-
+// srcs/object_utils.c	(src/utils/object_utils.c)
+void		oadd(t_object **list, t_object *new);	// 리스트에 추가.
+t_object	*olast(t_object *list);	// 리스트의 마지막으로 이동하는 함수.
 
 #endif

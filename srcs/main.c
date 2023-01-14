@@ -82,7 +82,10 @@ int	main(int argc, char *argv[])
 	t_mlx_data	mlx_data;
 	t_color3	pixel_color;
 
-	t_sphere	sp = sphere(point3(0, 0, -5), 2);	// 4
+	//t_sphere	sp = sphere(point3(0, 0, -5), 2);	// 4
+	t_object	*world = object(SP, sphere(point3(-2, 0, -5), 2));	// world에 구1 추가
+	oadd(&world, object(SP, sphere(point3(2, 0, -5), 2)));	// world에 구2 추가
+	oadd(&world, object(SP, sphere(point3(0, -1000, 0), 990)));	// world에 구3 추가
 
 	fp = ppm_file_init();
 	mlx_data_init(&mlx_data);
@@ -99,7 +102,7 @@ int	main(int argc, char *argv[])
 			// u와 v를 사용해 primary ray를 얻고, 그 광선으로 pixel_color를 구함.
 			mlx_data.ray = ray_primary(&(mlx_data.cam), u, v);
 			//pixel_color = ray_color(&(mlx_data.ray)); -> 4에서 구를 다룰 수 있도록 수정
-			pixel_color = ray_color(&(mlx_data.ray), &sp);
+			pixel_color = ray_color(&(mlx_data.ray), world);
 
 			color = write_color(pixel_color, fp); // out to rgb.ppm
 			my_mlx_pixel_put(&mlx_data, i, IMG_HEIGHT - 1 - j, color); // j가 max부터 시작이라 거꾸로

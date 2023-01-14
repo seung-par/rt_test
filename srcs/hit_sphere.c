@@ -23,7 +23,7 @@
  *
  * half_b는 짝수 근의 공식을 사용하여 계산을 단순화하기 위해 사용.
  */
-t_bool	hit_sphere(t_sphere *sp, t_ray *ray, t_hit_record *rec)
+t_bool	hit_sphere(t_object *world, t_ray *ray, t_hit_record *rec)
 {
 	t_vec3	oc;				// 방향벡터로 나타낸 구의 중심.
 	double	a, b, c;		// t에 대한 2차 방정식의 계수 
@@ -31,6 +31,7 @@ t_bool	hit_sphere(t_sphere *sp, t_ray *ray, t_hit_record *rec)
 	
 	double	sqrtd;
 	double	root;
+	t_sphere	*sp = (t_sphere *)world->element;
 
 	oc = vminus(ray->orig, sp->center);
 	a = vdot(ray->dir, ray->dir);

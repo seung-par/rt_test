@@ -17,8 +17,10 @@ SRC_LIST = main.c \
 		   scene.c \
 		   print.c \
 		   object_create.c \
-		   hit_sphere.c \
 		   normal.c \
+		   hit_sphere.c \
+		   hit.c \
+		   object_utils.c \
 
 GNL_LIST = get_next_line.c \
 		   get_next_line_utils.c \
