@@ -1,6 +1,7 @@
 #ifndef MINIRT_H
 # define MINIRT_H
 
+
 # include <math.h>
 # include <stdlib.h>
 # include <stdio.h>
@@ -33,11 +34,20 @@ typedef struct s_hit_record t_hit_record;
 // 그리고 기존에 sphere에만 적용 가능했던 함수들을 조금씩 수정할 예정이다.
 typedef struct s_object t_object;
 
+typedef struct s_light t_light;
+
+typedef struct s_scene t_scene;
+
 typedef int				t_bool;
 # define FALSE	0
 # define TRUE	1
+
 typedef int				t_object_type;
 # define SP		0
+// 점 광원의 오브젝트 타입 식별자 매크로. (광원도 오브젝트)
+# define LIGHT_POINT 1
+
+# define EPSILON 1e-6	// 0.000001
 
 struct	s_vec3
 {
@@ -65,8 +75,9 @@ struct	s_sphere
 struct	s_object
 {
 	t_object_type	type;
-	void			*element;
+	void			*element;	// 무엇이든 받을 수 있는 void *
 	void			*next;
+	t_color3		albedo;
 };
 
 struct	s_camera
@@ -85,13 +96,6 @@ struct	s_canvas
 	int		width;			// canvas width
 	int		height;			// canvas height
 	double	aspect_ratio;	// 종횡비
-	// -- image -- 
-	void	*img;
-	char	*addr;
-	int		bits_per_pixel;
-	int		line_length;
-	int		endian;
-	// -- image -- 
 };
 
 /*
@@ -123,15 +127,68 @@ struct	s_hit_record
 	double		t;			// 광선의 원점과 교점 사이의 거리!
 	t_bool		front_face;
 	// 교점에서의 색깔 등 추가적으로 필요한 정보는 나중에 추가~
+	t_color3	albedo;
+};
+
+/*
+ * 우리는 레이트레이싱이 아닌 퐁 조명 모델을 사용.
+ * 퐁 조명 모델은 보다 간단한 물리 법칙에 기반한다. 퐁 조명 모델도 광선을 추적한다.
+ * 하지만 딱 한 단계, 광원에서 빛이 나와서 물체에 반사되어 눈에 들어오는 단계만 수학적으로 계산한다.
+ * 퐁 조명 모델에 사용되는 중요한 물리학적 기법은 퐁 반사 모델이다. 퐁 반사 모델은 광원에서 나온 
+ * 빛이 물체에 반사되어 나올 때, 그 조도가 어느 정도가 되는지를 구한는 데에 활용되는 모델이다.
+ * 
+ * 퐁 반사 모델은 조도를 구할 때 세 가지 요소를 고려한다. 
+ * ambient lighting(주변 조명), diffusing lighting(확산 조명), specular lighting(반사광)
+ * 위 세 가지 요소를 결합.
+ * albedo = 반사율 (s_hit_record와 s_object 구조체 두 곳에 있음!!!)
+ *
+ * 퐁 조명 모델의 핵심은 '빛과 오브젝트의 상호작용을 세 가지 요소로 단순화시켜 각각 계산한 뒤 합한 것'
+ * 이 광원으로부터 해당 교점(hit point)에 도달한 빛의 양이라는 것이다.
+ * (퐁 조명 모델 요소에는 오브젝트가 발산하는 빛인 Emission(방사광)도 있지만 여기선 다루지 않는다)
+ *
+ * 교점에 도달한 빛 = Ambient + SUM(Specular + Diffuse)
+ * Ambient(주변광/환경광): 다른 물체에 의한 반사광, 대기 중의 산란광등을 단순화 시킨 요소이다. 장면 전체의 밝기에 영향을 주는 요소.
+ * Diffuse(산란광/난반사광): 난반사를 통해 우리 눈에 도달하는 빛을 단순화 시킨 요소.
+ * Specular(반사광/정반사광): 정반사를 통해 우리 눈에 도달하는 빛을 단순화 시킨 요소.
+ *
+ * 우리는 교점에 도달한 빛의 양을 계산하기 위해, 장면에 존재하는 모든 광원에 대해 각각의
+ * Speecular, Diffuse 합을 구한 뒤 최종적으로 Ambient을 더해야 한다. 그 뒤 빛의 총량과 오브젝트의
+ * 반사율을 곱해주어 최종적인 픽셀의 색을 얻어온다. 
+ * 이를 적용하여 phong_lighting 함수를 만들어보자.
+ *
+ * 광원에는 기본적으로 평행광원(Direct lighting ex.태양), 점광원(Point light), 집중광원(Spot light)이 있다.
+ *  밑의 구조체는 점광원.
+ */
+struct	s_light
+{
+	t_point3	origin;
+	t_color3	light_color;
+	double		bright_ratio;
+};
+
+struct	s_scene
+{
+	t_canvas		canvas;
+	t_camera		camera;
+	t_object		*world;	// 물체들만 
+	t_object		*light;	// 광선들만 
+	t_color3		ambient;
+	t_ray			ray;
+	t_hit_record	rec;
 };
 
 typedef struct	s_mlx_data
 {
 	void		*mlx;
 	void		*win;
-	t_canvas	canv;
-	t_camera	cam;
-	t_ray		ray;
+	t_scene		*scene;
+	// -- image -- 
+	void	*img;
+	char	*addr;
+	int		bits_per_pixel;
+	int		line_length;
+	int		endian;
+	// -- image -- 
 }				t_mlx_data;
 
 // srcs/print.c
@@ -160,8 +217,8 @@ t_vec3      vmin(t_vec3 vec1, t_vec3 vec2);
 t_ray		ray(t_point3 orig, t_vec3 dir);
 t_ray		ray_primary(t_camera *cam, double u, double v); // 가장 처음 카메라에서 출발한 광선
 t_point3	ray_at(t_ray *ray, double t);
-//t_color3	ray_color(t_ray *ray, t_sphere *sphere); // 광선이 최정적으로 얻게된 픽셀의 색상 값을 리턴
-t_color3	ray_color(t_ray *ray, t_object *world);
+// 광선이 최정적으로 얻게된 픽셀의 색상 값을 리턴
+t_color3	ray_color(t_scene *scene);
 
 // srcs/hit.c	(src/trace/hit/hit.c)
 t_bool		hit(t_object *obj, t_ray *ray, t_hit_record *rec);
@@ -177,7 +234,7 @@ void		set_face_normal(t_ray *r, t_hit_record *rec);
 // srcs/object_create.c	(srcs/scene/object_create.c)
 //t_sphere	sphere(t_point3 center, double radius);
 t_sphere	*sphere(t_point3 center, double radius);
-t_object	*object(t_object_type type, void *element);
+t_object	*object(t_object_type type, void *element, t_color3 albedo);
 // srcs/canvas.c	(srcs/scene/canvas.c) (scene.h)
 t_canvas	canvas(int width, int height);
 // sccs/scene.c		(srcs/scene/scene.c) (scene.h)
@@ -186,5 +243,26 @@ t_camera	camera(t_canvas *canvas, t_point3 origin);
 // srcs/object_utils.c	(src/utils/object_utils.c)
 void		oadd(t_object **list, t_object *new);	// 리스트에 추가.
 t_object	*olast(t_object *list);	// 리스트의 마지막으로 이동하는 함수.
+
+// 점광원 (Point light)
+t_light		*light_point(t_point3 light_origin, t_color3 light_color, double bright_ratio);
+
+// t_hit_record 변수를 초기화 해주는 함수. 
+// record_init함수에서 tmin값을 초기화 해줄 때 0이 아닌 EPSILON(0.000001)으로 정의했는데,
+// 이는 double 데이터 타입이 근사값이기 때문이다. 
+// hit함수에서 t의 값이 0에 가까운 값이 나올 때, tmin이 0이면 비교 시 hit 상황이 아닌 때도 
+// hit로 판단하는 오차를 만들어낼 수 있기 때문에 tmin값을 EPSILON으로 설정하여 이러한 상황을 
+// 예방할 수 있다.
+// src/ray.c	(src/trace/ray/ray.c)
+t_hit_record	record_init(void);
+
+/*
+ * 우리는 교점에 도달한 빛의 양을 계산하기 위해, 장면에 존재하는 모든 광원에 대해 각각의
+ * Speecular, Diffuse 합을 구한 뒤 최종적으로 Ambient을 더해야 한다. 그 뒤 빛의 총량과 오브젝트의
+ * 반사율을 곱해주어 최종적인 픽셀의 색을 얻어온다. 
+ * 이를 적용하여 phong_lighting 함수를 만들어보자.
+ */
+// src/phong_lighting.c	(src/trace/ray/phong_lighting.c)
+t_color3		phong_lighting(t_scene *scene);
 
 #endif

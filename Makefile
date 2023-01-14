@@ -21,6 +21,7 @@ SRC_LIST = main.c \
 		   hit_sphere.c \
 		   hit.c \
 		   object_utils.c \
+		   phong_lighting.c \
 
 GNL_LIST = get_next_line.c \
 		   get_next_line_utils.c \

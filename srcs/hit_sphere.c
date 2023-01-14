@@ -23,7 +23,7 @@
  *
  * half_b는 짝수 근의 공식을 사용하여 계산을 단순화하기 위해 사용.
  */
-t_bool	hit_sphere(t_object *world, t_ray *ray, t_hit_record *rec)
+t_bool	hit_sphere(t_object *sp_obj, t_ray *ray, t_hit_record *rec)
 {
 	t_vec3	oc;				// 방향벡터로 나타낸 구의 중심.
 	double	a, b, c;		// t에 대한 2차 방정식의 계수 
@@ -31,7 +31,7 @@ t_bool	hit_sphere(t_object *world, t_ray *ray, t_hit_record *rec)
 	
 	double	sqrtd;
 	double	root;
-	t_sphere	*sp = (t_sphere *)world->element;
+	t_sphere	*sp = (t_sphere *)sp_obj->element;
 
 	oc = vminus(ray->orig, sp->center);
 	a = vdot(ray->dir, ray->dir);
@@ -67,5 +67,6 @@ t_bool	hit_sphere(t_object *world, t_ray *ray, t_hit_record *rec)
 	// 그러나 오브젝트와 광원 간의 상화작용을 계산하기 위해서는 법선과 광선이 항상 반대방향을
 	// 향하고 있어야 한다. 그러므로 법선이 광선의 반대 방향인지 확인하는 함수를 추가했다.
 	set_face_normal(ray, rec);
+	rec->albedo = sp_obj->albedo;
 	return (TRUE);
 }
