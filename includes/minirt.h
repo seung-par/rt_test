@@ -48,6 +48,11 @@ typedef int				t_object_type;
 # define LIGHT_POINT 1
 
 # define EPSILON 1e-6	// 0.000001
+// 광원의 밝기는 광원의 속성이 bright_ratio와 장면의 광원들의 기준이 되는
+// 빛의 양인 '기준 광선속'의 곱을 통해 결정한다. 
+// 장면에 존재하는 광원들의 빛의 세기를 조절할 수 있는 
+// 기준 광선속 매크로 LUMEN
+# define LUMEN 4	// 이 값을 조절하여 장면의 밝기를 조절할 수 있다.
 
 struct	s_vec3
 {
@@ -264,5 +269,7 @@ t_hit_record	record_init(void);
  */
 // src/phong_lighting.c	(src/trace/ray/phong_lighting.c)
 t_color3		phong_lighting(t_scene *scene);
+t_color3		point_light_get(t_scene *scene, t_light *light);
+t_bool			in_shadow(t_object *objs, t_ray light_ray, double light_len);
 
 #endif

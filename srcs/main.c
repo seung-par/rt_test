@@ -65,11 +65,10 @@ t_scene	*scene_init(void)
 	world = object(SP, sphere(point3(-2, 0, -5), 2), color3(0.5, 0, 0));	// world에 구1 추가
 	oadd(&world, object(SP, sphere(point3(2, 0, -5), 2), color3(0, 0.5, 0)));	// world에 구2 추가
 	//  990 으로 했을 때랑 999로 했을 때랑 그림이 다름 --> 계산 시 오차 때문인듯
-	oadd(&world, object(SP, sphere(point3(0, -1000, 0), 990), color3(1, 1, 1)));	// world에 구3 추가
+	oadd(&world, object(SP, sphere(point3(0, -1000, 0), 995), color3(1, 1, 1)));	// world에 구3 추가
 	scene->world = world;
-	
 	// 																					더미 albedo
-	lights = object(LIGHT_POINT, light_point(point3(0, 5, 0), color3(1, 1, 1), 0.5), color3(0, 0, 0));
+	lights = object(LIGHT_POINT, light_point(point3(0, 20, 0), color3(1, 1, 1), 0.1), color3(0, 0, 0));
 	scene->light = lights;
 	ka = 0.1;	// ka = ambient lighting의 강도 (ambient strength)
 	// ambient느느 ambient lighting의 색과 ambient lighting의 강도(ambient strength) 계수인 ka의 곱으로 표현된다. ka값은 장면의 원하는 밝기에 따라 [0 ~ 1] 사이의 값으로 설정하면 된다.
